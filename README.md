@@ -24,6 +24,10 @@ A full-stack demo for a **Bio-Mechanical & Sustainability Digital Twin** built o
 **Unity Catalog — Data Lineage**
 ![Data Lineage](docs/data-lineage.png)
 
+**Unity Catalog AI Assistant — Natural Language to SQL**
+Ask questions in plain English directly on the silver table — e.g. *"Total water consumption by plant?"* — and get instant SQL + results across both plants.
+![Catalog AI Query](docs/catalog-ai-query.png)
+
 ---
 
 ## Architecture
