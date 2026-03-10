@@ -208,6 +208,15 @@ databricks secrets put-secret ${var.secret_scope} ${var.secret_key} \
 | Sustainability Hub | `/sustainability` | CO₂ / energy / water area charts + carbon traceback |
 | What-If Simulator | `/simulator` | Sliders for fat %, protein %, heat setting → energy & quality deltas |
 
+**Bio-Mechanical Knowledge Graph** — live RDF-style graph linking milk batches (biological twin) to factory equipment (mechanical twin), with alarm status per node.
+![Bio-Mech Graph](docs/app-biomech-graph.png)
+
+**Sustainability Hub** — CO₂ footprint, total energy & water trends, plus per-batch carbon traceback linking biological composition to mechanical energy cost.
+![Sustainability Hub](docs/app-sustainability.png)
+
+**What-If Simulation Engine** — adjust fat %, protein %, and pasteurizer heat setting; see the multi-dimensional impact on energy, CO₂, viscosity, and quality score instantly.
+![What-If Simulator](docs/app-whatif-sim.png)
+
 ---
 
 For detailed deployment steps, reset procedures, and demo narrative see [BUNDLE_DEPLOY.md](BUNDLE_DEPLOY.md).
