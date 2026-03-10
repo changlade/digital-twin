@@ -11,7 +11,18 @@ A full-stack demo for a **Bio-Mechanical & Sustainability Digital Twin** built o
 | **ETL Pipeline** | Synthetic event generator + Lakeflow Spark Declarative Pipeline (bronze → silver → gold) |
 | **DairyFlow App** | FastAPI backend + React frontend served as a Databricks App |
 
+---
+
+## Screenshots
+
+**DairyFlow App — Live Dashboard**
 ![DairyFlow Dashboard](docs/dairyflow-dashboard.png)
+
+**Lakeflow Pipeline — Real-time DAG**
+![Lakeflow Pipeline](docs/lakeflow-pipeline.png)
+
+**Unity Catalog — Data Lineage**
+![Data Lineage](docs/data-lineage.png)
 
 ---
 
