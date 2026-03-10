@@ -1,5 +1,7 @@
 # Danone Digital Twin
 
+![DairyFlow Dashboard](docs/dairyflow-dashboard.png)
+
 A full-stack demo for a **Bio-Mechanical & Sustainability Digital Twin** built on Databricks. The repo contains two components that deploy together as a single **Databricks Asset Bundle**:
 
 | Component | What it does |
