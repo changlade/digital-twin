@@ -6,10 +6,13 @@
 
 A full-stack demo for a **Bio-Mechanical & Sustainability Digital Twin** built on Databricks. The repo contains two components that deploy together as a single **Databricks Asset Bundle**:
 
+For more details on Ontologies in Databricks: https://www.databricks.com/blog/how-build-digital-twins-operational-efficiency
+
 | Component | What it does |
 |-----------|-------------|
 | **ETL Pipeline** | Synthetic event generator + Lakeflow Spark Declarative Pipeline (bronze → silver → gold) |
 | **DairyFlow App** | FastAPI backend + React frontend served as a Databricks App |
+
 
 ---
 
