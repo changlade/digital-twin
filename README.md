@@ -1,6 +1,10 @@
-# Danone Digital Twin
+<div align="center">
+  <img src="docs/dairyflow-banner.png" alt="DairyFlow Banner" width="800"/>
+  <br/>
+  <img src="docs/dairyflow-icon.png" alt="DairyFlow Icon" width="180"/>
+</div>
 
-![DairyFlow Dashboard](docs/dairyflow-dashboard.png)
+# Danone Digital Twin
 
 A full-stack demo for a **Bio-Mechanical & Sustainability Digital Twin** built on Databricks. The repo contains two components that deploy together as a single **Databricks Asset Bundle**:
 
@@ -8,6 +12,8 @@ A full-stack demo for a **Bio-Mechanical & Sustainability Digital Twin** built o
 |-----------|-------------|
 | **ETL Pipeline** | Synthetic event generator + Lakeflow Spark Declarative Pipeline (bronze → silver → gold) |
 | **DairyFlow App** | FastAPI backend + React frontend served as a Databricks App |
+
+![DairyFlow Dashboard](docs/dairyflow-dashboard.png)
 
 ---
 
