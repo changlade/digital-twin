@@ -8,6 +8,7 @@ include:
   - resources/*.yml
 
 variables:
+  # ── Data layer ──────────────────────────────────────────────────────────────
   catalog:
     description: Unity Catalog name
     default: danonedemo_catalog
@@ -18,13 +19,27 @@ variables:
     description: Volume name for streaming events landing zone
     default: twin_landing
   warehouse_id:
-    description: SQL warehouse ID for setup job
+    description: SQL warehouse ID used by the setup job and the DairyFlow app
     default: 50e0bc7f9918a201
+
+  # ── Event generator ─────────────────────────────────────────────────────────
   run_duration_minutes:
     description: How long the event generator runs (minutes)
     default: "360"
 
+  # ── DairyFlow app ───────────────────────────────────────────────────────────
+  app_name:
+    description: Databricks App name (must be unique per workspace)
+    default: danone-dairyflow
+  secret_scope:
+    description: Databricks secret scope that holds the PAT used by the app
+    default: dairyflow-secrets
+  secret_key:
+    description: Secret key inside the scope that contains the PAT value
+    default: databricks-pat
+
 targets:
+  # ── Development (default) ────────────────────────────────────────────────────
   dev:
     default: true
     workspace:
@@ -33,3 +48,18 @@ targets:
       catalog: danonedemo_catalog
       schema: digital_twin
       volume_name: twin_landing
+      run_duration_minutes: "360"
+      app_name: danone-dairyflow
+
+  # ── Production ───────────────────────────────────────────────────────────────
+  # Deploy with: databricks bundle deploy --target prod
+  prod:
+    workspace:
+      host: https://fevm-danonedemo.cloud.databricks.com
+    variables:
+      catalog: danonedemo_catalog
+      schema: digital_twin_prod
+      volume_name: twin_landing_prod
+      run_duration_minutes: "720"
+      app_name: danone-dairyflow-prod
+      secret_scope: dairyflow-secrets-prod

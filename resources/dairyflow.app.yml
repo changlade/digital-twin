@@ -1,0 +1,33 @@
+resources:
+  apps:
+    dairyflow:
+      name: ${var.app_name}
+      description: "Danone DairyFlow — Bio-Mechanical Digital Twin Optimizer"
+
+      # Source code path (relative to this file's location in resources/)
+      # The bundle uploads this directory to the Databricks workspace.
+      # Run scripts/build_frontend.sh before deploying to populate static/.
+      source_code_path: ../apps/dairyflow/backend
+
+      config:
+        command:
+          - python
+          - start.py
+
+        env:
+          - name: DATABRICKS_HOST
+            value: ${workspace.host}
+          - name: DATABRICKS_WAREHOUSE_ID
+            value: ${var.warehouse_id}
+          - name: DATABRICKS_CATALOG
+            value: ${var.catalog}
+          - name: DATABRICKS_SCHEMA
+            value: ${var.schema}
+          - name: SECRET_SCOPE
+            value: ${var.secret_scope}
+          - name: SECRET_KEY
+            value: ${var.secret_key}
+
+      permissions:
+        - level: CAN_USE
+          group_name: users

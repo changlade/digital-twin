@@ -1,0 +1,17 @@
+command:
+  - python
+  - start.py
+
+env:
+  - name: DATABRICKS_HOST
+    value: "https://fevm-danonedemo.cloud.databricks.com"
+  - name: DATABRICKS_WAREHOUSE_ID
+    value: "50e0bc7f9918a201"
+  - name: DATABRICKS_CATALOG
+    value: "danonedemo_catalog"
+  - name: DATABRICKS_SCHEMA
+    value: "digital_twin"
+  - name: SECRET_SCOPE
+    value: "dairyflow-secrets"
+  - name: SECRET_KEY
+    value: "databricks-pat"

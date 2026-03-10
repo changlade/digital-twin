@@ -1,14 +1,17 @@
-# Danone Digital Twin – Demo Deployment Guide
+# Danone Digital Twin — Bundle Deployment Guide
 
-Bio-Mechanical Yield & Sustainability Digital Twin showcasing **Databricks streaming ingestion** and **Lakeflow Spark Declarative Pipeline** capabilities with synthetic Danone factory data.
+Bio-Mechanical Yield & Sustainability Digital Twin showcasing **Databricks streaming ingestion**, **Lakeflow Spark Declarative Pipelines**, and the **DairyFlow Databricks App** — all deployed from a single Databricks Asset Bundle.
+
+---
 
 ## What's in the Bundle
 
-| Resource | Name in Workspace | Description |
-|----------|-------------------|-------------|
+| Resource | Workspace Name | Description |
+|----------|----------------|-------------|
 | **Pipeline** | `[dev] Danone Digital Twin ETL` | Lakeflow pipeline: bronze → silver → gold |
-| **Job: Generator** | `[dev] Danone Twin - Event Generator` | Writes sensor JSON events every second to the volume |
-| **Job: Setup** | `[dev] Danone Twin - Setup (run once)` | One-time setup via Databricks (wraps the local script) |
+| **Job: Generator** | `[dev] Danone Twin - Event Generator` | Writes sensor JSON events every second to the UC Volume |
+| **Job: Setup** | `[dev] Danone Twin - Setup (run once)` | Creates schema, volume, reference tables, seeds events |
+| **App** | `danone-dairyflow` | DairyFlow FastAPI + React frontend (Databricks App) |
 
 ### Tables Created
 
@@ -22,73 +25,131 @@ Bio-Mechanical Yield & Sustainability Digital Twin showcasing **Databricks strea
 | `equipment` | Delta Table | Reference: 20 pieces of equipment across 2 plants |
 | `raw_material_batches` | Delta Table | Reference: 15 synthetic milk/formula batches |
 
-All tables land in `danonedemo_catalog.digital_twin`.
+All tables land in `${var.catalog}.${var.schema}` (default: `danonedemo_catalog.digital_twin`).
+
+---
+
+## Variables
+
+Override any variable at deploy time with `--var="key=value"`.
+
+| Variable | Default (dev) | Default (prod) | Description |
+|----------|--------------|----------------|-------------|
+| `catalog` | `danonedemo_catalog` | `danonedemo_catalog` | Unity Catalog name |
+| `schema` | `digital_twin` | `digital_twin_prod` | Schema for all tables |
+| `volume_name` | `twin_landing` | `twin_landing_prod` | UC Volume for streaming events |
+| `warehouse_id` | `50e0bc7f9918a201` | `50e0bc7f9918a201` | SQL warehouse for setup job + app queries |
+| `run_duration_minutes` | `360` | `720` | Event generator run duration |
+| `app_name` | `danone-dairyflow` | `danone-dairyflow-prod` | Databricks App name (unique per workspace) |
+| `secret_scope` | `dairyflow-secrets` | `dairyflow-secrets-prod` | Databricks secret scope holding the PAT |
+| `secret_key` | `databricks-pat` | `databricks-pat` | Key name inside the scope |
 
 ---
 
 ## Prerequisites
 
-- Databricks CLI installed and authenticated (`DEFAULT` profile → `https://fevm-danonedemo.cloud.databricks.com`)
-- Python 3.11+ with `databricks-sdk` installed (`pip install databricks-sdk`)
+- Databricks CLI installed and authenticated:
+  ```bash
+  databricks configure --profile DEFAULT
+  # Verify:
+  databricks current-user me --profile DEFAULT
+  ```
+- Python 3.11+ with `databricks-sdk`: `pip install databricks-sdk`
+- Node.js 18+ and npm (for building the DairyFlow frontend)
+- Databricks secret scope with a PAT stored (see [App Authentication](#app-authentication) below)
+
+---
+
+## App Authentication (one-time per environment)
+
+The DairyFlow app reads a Personal Access Token from Databricks Secrets to run SQL queries. Create the secret before the first deploy:
+
+```bash
+# Create the secret scope
+databricks secrets create-scope dairyflow-secrets --profile DEFAULT
+
+# Store your PAT
+databricks secrets put-secret dairyflow-secrets databricks-pat \
+  --string-value "dapi..." --profile DEFAULT
+```
+
+For a `prod` deployment, repeat with `dairyflow-secrets-prod` (or override `--var="secret_scope=..."` as needed).
 
 ---
 
 ## First-Time Setup (run once per environment)
 
-From the `danone-digital-twin/` directory:
+### Step 1 — Build the frontend
 
 ```bash
-# 1. Deploy the bundle (uploads files + creates pipeline and jobs in workspace)
+./scripts/build_frontend.sh
+```
+
+This runs `npm ci && npm run build` in `apps/dairyflow/frontend/` and copies the production bundle into `apps/dairyflow/backend/static/` so it gets picked up by the bundle upload.
+
+### Step 2 — Deploy the bundle
+
+```bash
+# Deploy to dev (default target)
 databricks bundle deploy --profile DEFAULT
 
-# 2. Run the local setup script (creates schema/volume, loads reference data, seeds 20 event files)
+# Deploy to prod
+databricks bundle deploy --target prod --profile DEFAULT
+```
+
+This creates or updates:
+- The Lakeflow pipeline
+- The event generator and setup jobs
+- The DairyFlow Databricks App (uploads backend + static frontend)
+
+### Step 3 — Run the setup job (once per environment)
+
+```bash
+# From the CLI:
+databricks bundle run danone_twin_setup --profile DEFAULT
+
+# Or run the local setup script instead (faster):
 python scripts/setup_demo_local.py
 ```
 
-The setup script will:
-- Create `danonedemo_catalog.digital_twin` schema
-- Create `twin_landing` Unity Catalog volume
-- Upload `equipment.csv` and `raw_material_batches.csv` to the volume
-- Create Delta tables `equipment` and `raw_material_batches`
-- Seed 20 initial JSON event files so the pipeline has data immediately
+This creates the schema and volume, uploads reference CSVs, and seeds 20 initial event files so the pipeline has data immediately.
 
 ---
 
 ## Demo Flow (on presentation day)
 
-### Step 1 – Start the event generator
+### Start the event generator
 
 ```bash
 databricks bundle run danone_twin_event_generator --profile DEFAULT
 ```
 
-Or in the Databricks UI: **Workflows → Jobs → `[dev] Danone Twin - Event Generator` → Run now**
-
-This writes **10 sensor events per second** as individual JSON files to:
+This writes **3 sensor events per second** as JSON files to:
 ```
-/Volumes/danonedemo_catalog/digital_twin/twin_landing/streaming_events/
+/Volumes/${var.catalog}/${var.schema}/${var.volume_name}/streaming_events/
 ```
 
-For a 10-minute demo, the generator produces ~600 files (~6,000 events).
-
-### Step 2 – Start the Lakeflow pipeline (continuous mode)
+### Start (or re-trigger) the Lakeflow pipeline
 
 ```bash
 databricks bundle run danone_twin_etl --profile DEFAULT
 ```
 
-Or in the Databricks UI: **Delta Live Tables → `[dev] Danone Digital Twin ETL` → Start**
+Watch the pipeline DAG in the UI update live:
+1. **Bronze** (`bronze_twin_events`): Auto Loader ingests new JSON files
+2. **Silver** (`silver_twin_events`): Enriched stream with moisture quality flags
+3. **Gold** (3 tables): Aggregated KPIs for equipment, batch yield, and sustainability
 
-The pipeline runs in **continuous mode** — it stays running and picks up new files from the volume as soon as the generator writes them (typically within 1–2 seconds). Watch the pipeline DAG in the UI update live:
-1. **Bronze** (`bronze_twin_events`): Auto Loader continuously detects and ingests new JSON files
-2. **Silver** (`silver_twin_events`): Enriched stream with moisture quality flags, updated in real time
-3. **Gold** (3 tables): Aggregated KPIs refresh continuously as new silver rows arrive
+### Open the DairyFlow app
 
-To stop the pipeline: click **Stop** in the UI, or `databricks pipelines stop --pipeline-id 67ab1515-48ef-448d-b7f8-0fa128776947 --profile DEFAULT`.
+Find its URL:
+```bash
+databricks apps get danone-dairyflow --profile DEFAULT
+```
 
-### Step 3 – Show the data in real time
+Or in the Databricks UI: **Apps → danone-dairyflow → Open**.
 
-Query the gold tables while the generator is running and the pipeline is updating:
+### Query the gold tables directly
 
 ```sql
 -- Equipment operational KPIs (mechanical twin)
@@ -109,35 +170,65 @@ SELECT plant_id, line_id, hour_bucket, total_energy_kwh,
 FROM danonedemo_catalog.digital_twin.gold_sustainability_hourly
 ORDER BY hour_bucket DESC;
 
--- Raw event stream (to show "transaction table")
+-- Raw event stream
 SELECT event_ts, event_type, equipment_name, plant_id,
        temperature_c, moisture_pct, energy_kwh, alarm_code
 FROM danonedemo_catalog.digital_twin.silver_twin_events
 ORDER BY event_ts DESC LIMIT 50;
 ```
 
-### Demo narrative
+---
 
-- **Streaming ingestion**: "Every second, 17 factories are sending sensor data. Each file arrives here in the volume. Auto Loader picks it up and streams it into `bronze_twin_events` in real time."
-- **Lakeflow pipeline**: "The Lakeflow pipeline propagates data through three layers: bronze (raw), silver (cleaned, enriched with quality flags), and gold (KPI aggregations for equipment, batches, and sustainability)."
-- **Biological × Mechanical link**: "When moisture goes out of spec (> 5%), the system raises an alarm in silver and it propagates to `gold_equipment_metrics.alarm_count`. We can trace back through the batch to see the inlet temperature that caused it."
-- **Circular Water Twin**: "CIP units are the biggest water consumers. `gold_sustainability_hourly.cip_water_liters` tracks this per plant per hour, and water alarms appear when consumption exceeds the threshold — enabling the 'Circular Water' optimization Danone targets."
+## Deploying to Multiple Environments
+
+### Dev vs. Prod targets
+
+```bash
+# Dev (default)
+databricks bundle deploy --profile DEFAULT
+
+# Prod
+databricks bundle deploy --target prod --profile DEFAULT
+```
+
+The `prod` target uses a separate schema (`digital_twin_prod`), a separate app name (`danone-dairyflow-prod`), and a separate secret scope (`dairyflow-secrets-prod`).
+
+### Ad-hoc variable overrides
+
+```bash
+databricks bundle deploy --profile DEFAULT \
+  --var="catalog=my_catalog" \
+  --var="schema=my_schema" \
+  --var="app_name=my-dairyflow" \
+  --var="run_duration_minutes=20"
+```
 
 ---
 
 ## Redeploying After Code Changes
 
+### After any ETL SQL or generator change
+
 ```bash
-cd danone-digital-twin/
-
-# Validate first
-databricks bundle validate --profile DEFAULT
-
-# Deploy updated files
 databricks bundle deploy --profile DEFAULT
+databricks bundle run danone_twin_etl --profile DEFAULT   # full refresh resets streaming state
+```
 
-# Re-run pipeline (full refresh resets streaming state)
-databricks bundle run danone_twin_etl --profile DEFAULT
+### After a backend-only change (Python routers, etc.)
+
+```bash
+databricks bundle deploy --profile DEFAULT
+# The app restarts automatically on the next request or you can trigger a redeploy:
+databricks apps deploy danone-dairyflow \
+  --source-code-path /Workspace/Users/christophe.anglade@databricks.com/.bundle/danone-digital-twin/dev/files/apps/dairyflow/backend \
+  --profile DEFAULT
+```
+
+### After a frontend change
+
+```bash
+./scripts/build_frontend.sh          # rebuild React → static/
+databricks bundle deploy --profile DEFAULT
 ```
 
 ---
@@ -145,66 +236,64 @@ databricks bundle run danone_twin_etl --profile DEFAULT
 ## Project Structure
 
 ```
-danone-digital-twin/
-├── databricks.yml                          # Bundle config (host, variables, targets)
-├── BUNDLE_DEPLOY.md                        # This file
+digital-twin/
+├── databricks.yml                           # Bundle config: variables, targets, resource includes
+├── README.md                                # Project overview and quick start
+├── BUNDLE_DEPLOY.md                         # This file
+│
 ├── resources/
-│   ├── danone_twin_etl.pipeline.yml        # Lakeflow pipeline resource
-│   ├── danone_twin_event_generator.job.yml # Event generator job
-│   └── danone_twin_setup.job.yml           # One-time setup job (Databricks-side)
+│   ├── danone_twin_etl.pipeline.yml         # Lakeflow pipeline resource
+│   ├── danone_twin_event_generator.job.yml  # Event generator job
+│   ├── danone_twin_setup.job.yml            # One-time setup job
+│   └── dairyflow.app.yml                    # DairyFlow Databricks App resource
+│
 ├── src/
-│   ├── danone_twin_etl/
-│   │   └── transformations/
-│   │       ├── bronze_twin_events.sql      # STREAMING TABLE: Auto Loader from volume
-│   │       ├── silver_twin_events.sql      # STREAMING TABLE: Enriched events
-│   │       ├── gold_equipment_metrics.sql  # MATERIALIZED VIEW: 5-min equipment KPIs
-│   │       ├── gold_batch_yield.sql        # MATERIALIZED VIEW: Per-batch quality
-│   │       └── gold_sustainability_hourly.sql # MATERIALIZED VIEW: Energy + water KPIs
+│   ├── danone_twin_etl/transformations/
+│   │   ├── bronze_twin_events.sql           # STREAMING TABLE: Auto Loader from volume
+│   │   ├── silver_twin_events.sql           # STREAMING TABLE: Enriched events
+│   │   ├── gold_equipment_metrics.sql       # MATERIALIZED VIEW: 5-min equipment KPIs
+│   │   ├── gold_batch_yield.sql             # MATERIALIZED VIEW: Per-batch quality
+│   │   └── gold_sustainability_hourly.sql   # MATERIALIZED VIEW: Energy + water KPIs
 │   └── generator/
-│       ├── event_generator.py              # Core generator logic (reusable module)
-│       └── run_generator.py               # Databricks notebook wrapper for the job
+│       ├── event_generator.py               # Core generator logic
+│       └── run_generator.py                 # Databricks notebook wrapper
+│
+├── apps/
+│   └── dairyflow/
+│       ├── backend/                         # Deployed to Databricks Apps
+│       │   ├── app.yaml                     # App entrypoint + env var defaults
+│       │   ├── start.py                     # Uvicorn launcher
+│       │   ├── main.py                      # FastAPI app
+│       │   ├── databricks_client.py         # M2M → PAT auth + SQL client
+│       │   ├── requirements.txt
+│       │   ├── routers/                     # stream, equipment, batches, sustainability, graph, simulate
+│       │   └── static/                      # Pre-built React SPA (generated by build_frontend.sh)
+│       └── frontend/                        # React + TypeScript source
+│           ├── src/
+│           ├── package.json
+│           └── vite.config.ts
+│
 ├── scripts/
-│   ├── setup_demo_local.py                 # Local setup script (run from CLI)
-│   └── setup_demo.py                       # Databricks notebook setup (alternative)
+│   ├── build_frontend.sh                    # Build React → apps/dairyflow/backend/static/
+│   ├── setup_demo_local.py                  # Local setup script
+│   └── setup_demo.py                        # Databricks notebook setup
+│
 └── data/
-    ├── equipment.csv                       # 20 pieces of equipment (2 plants, 5 types)
-    └── raw_material_batches.csv            # 15 synthetic milk/formula batches
+    ├── equipment.csv
+    └── raw_material_batches.csv
 ```
-
----
-
-## Variables
-
-Override at deploy time with `--var`:
-
-```bash
-databricks bundle deploy --profile DEFAULT \
-  --var="catalog=my_catalog" \
-  --var="schema=my_schema" \
-  --var="volume_name=my_volume" \
-  --var="run_duration_minutes=20"
-```
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `catalog` | `danonedemo_catalog` | Unity Catalog name |
-| `schema` | `digital_twin` | Schema for all tables |
-| `volume_name` | `twin_landing` | Volume for streaming events |
-| `warehouse_id` | `50e0bc7f9918a201` | SQL warehouse for setup job |
-| `run_duration_minutes` | `10` | Generator run duration |
 
 ---
 
 ## Demo Reset
 
-To reset the streaming data and run the demo fresh:
+To reset streaming data and run the demo fresh:
 
 ```bash
 # Clear seeded files and streaming state
 python3.11 -c "
 from databricks.sdk import WorkspaceClient
 w = WorkspaceClient(profile='DEFAULT')
-# List and delete files
 files = list(w.files.list_directory_contents('/Volumes/danonedemo_catalog/digital_twin/twin_landing/streaming_events'))
 for f in files:
     w.files.delete(f.path)
@@ -212,7 +301,7 @@ for f in files:
 print(f'Cleared {len(files)} files.')
 "
 
-# Drop and recreate tables
+# Drop pipeline tables
 python3.11 -c "
 from databricks.sdk import WorkspaceClient
 w = WorkspaceClient(profile='DEFAULT')
@@ -222,15 +311,18 @@ for t in ['bronze_twin_events','silver_twin_events','gold_equipment_metrics','go
     print(f'Dropped: {t}')
 "
 
-# Re-seed events
+# Re-seed events and restart
 python scripts/setup_demo_local.py
-
-# Restart pipeline
 databricks bundle run danone_twin_etl --profile DEFAULT
 ```
 
-## Workspace Links
+---
 
-- **Pipeline**: https://fevm-danonedemo.cloud.databricks.com/pipelines/67ab1515-48ef-448d-b7f8-0fa128776947
-- **Generator job**: https://fevm-danonedemo.cloud.databricks.com/jobs/765791638727704
-- **Setup job**: https://fevm-danonedemo.cloud.databricks.com/jobs/250008881976566
+## Workspace Links (dev environment)
+
+| Resource | Link |
+|----------|------|
+| DairyFlow App (live) | https://danone-dairyflow-7474655187458913.aws.databricksapps.com |
+| Pipeline | https://fevm-danonedemo.cloud.databricks.com/pipelines/67ab1515-48ef-448d-b7f8-0fa128776947 |
+| Generator job | https://fevm-danonedemo.cloud.databricks.com/jobs/765791638727704 |
+| Setup job | https://fevm-danonedemo.cloud.databricks.com/jobs/250008881976566 |
