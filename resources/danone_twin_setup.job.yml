@@ -1,0 +1,28 @@
+resources:
+  jobs:
+    danone_twin_setup:
+      name: "[${bundle.target}] Danone Twin - Setup (run once)"
+      description: >
+        One-time setup job: creates the schema and volume, uploads reference data (equipment,
+        raw material batches), and seeds a small initial batch of streaming events so the
+        Lakeflow pipeline can be validated immediately.
+
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+
+      tasks:
+        - task_key: setup_schema_and_volume
+          description: Create schema, volume, and load reference tables. Upload reference CSVs.
+          notebook_task:
+            notebook_path: ${workspace.root_path}/files/scripts/setup_demo
+            source: WORKSPACE
+            base_parameters:
+              CATALOG: ${var.catalog}
+              SCHEMA: ${var.schema}
+              VOLUME_NAME: ${var.volume_name}
+              WAREHOUSE_ID: ${var.warehouse_id}
+          timeout_seconds: 1800
+
+      permissions:
+        - level: CAN_VIEW
+          group_name: users

@@ -1,0 +1,35 @@
+bundle:
+  name: danone-digital-twin
+
+workspace:
+  host: https://fevm-danonedemo.cloud.databricks.com
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: Unity Catalog name
+    default: danonedemo_catalog
+  schema:
+    description: Schema name for digital twin tables
+    default: digital_twin
+  volume_name:
+    description: Volume name for streaming events landing zone
+    default: twin_landing
+  warehouse_id:
+    description: SQL warehouse ID for setup job
+    default: 50e0bc7f9918a201
+  run_duration_minutes:
+    description: How long the event generator runs (minutes)
+    default: "360"
+
+targets:
+  dev:
+    default: true
+    workspace:
+      host: https://fevm-danonedemo.cloud.databricks.com
+    variables:
+      catalog: danonedemo_catalog
+      schema: digital_twin
+      volume_name: twin_landing

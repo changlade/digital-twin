@@ -1,0 +1,29 @@
+resources:
+  jobs:
+    danone_twin_event_generator:
+      name: "[${bundle.target}] Danone Twin - Event Generator"
+      description: >
+        Runs the synthetic event generator that writes JSON sensor events every second to
+        the Unity Catalog volume. Start this job before or concurrently with the Lakeflow
+        pipeline to showcase real-time streaming ingestion.
+
+      max_concurrent_runs: 1
+      timeout_seconds: 28800
+
+      tasks:
+        - task_key: generate_streaming_events
+          description: >
+            Write one JSON file per second containing Bio-Mechanical-Sustainability sensor
+            events to the volume landing zone. Runs for RUN_DURATION_MINUTES minutes.
+          notebook_task:
+            notebook_path: ${workspace.root_path}/files/src/generator/run_generator
+            source: WORKSPACE
+            base_parameters:
+              STREAMING_EVENTS_VOLUME_PATH: /Volumes/${var.catalog}/${var.schema}/${var.volume_name}/streaming_events
+              RUN_DURATION_MINUTES: ${var.run_duration_minutes}
+              EVENTS_PER_TICK: "10"
+          timeout_seconds: 28800
+
+      permissions:
+        - level: CAN_VIEW
+          group_name: users

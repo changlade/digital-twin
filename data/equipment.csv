@@ -1,0 +1,21 @@
+equipment_id,name,type,line_id,plant_id,capacity_kg_h,commissioned_year
+EQ-SD-001,Spray Dryer Alpha,spray_dryer,LINE-A,PLANT-OPGLIÈRES,12000,2018
+EQ-SD-002,Spray Dryer Beta,spray_dryer,LINE-A,PLANT-OPGLIÈRES,12000,2018
+EQ-SD-003,Spray Dryer Gamma,spray_dryer,LINE-B,PLANT-OPGLIÈRES,14000,2021
+EQ-SD-004,Spray Dryer Nutricia-1,spray_dryer,LINE-C,PLANT-ALMERÍA,10000,2019
+EQ-SD-005,Spray Dryer Nutricia-2,spray_dryer,LINE-C,PLANT-ALMERÍA,10000,2019
+EQ-MX-001,Continuous Mixer Alpha,mixer,LINE-A,PLANT-OPGLIÈRES,8000,2017
+EQ-MX-002,Continuous Mixer Beta,mixer,LINE-B,PLANT-OPGLIÈRES,8000,2020
+EQ-MX-003,High-Shear Mixer Nutricia,mixer,LINE-C,PLANT-ALMERÍA,6000,2019
+EQ-HE-001,Heat Exchanger A1,heat_exchanger,LINE-A,PLANT-OPGLIÈRES,15000,2016
+EQ-HE-002,Heat Exchanger A2,heat_exchanger,LINE-B,PLANT-OPGLIÈRES,15000,2016
+EQ-HE-003,Pasteurizer Nutricia,heat_exchanger,LINE-C,PLANT-ALMERÍA,9000,2019
+EQ-CIP-001,CIP Unit Alpha,cip_unit,LINE-A,PLANT-OPGLIÈRES,3000,2018
+EQ-CIP-002,CIP Unit Beta,cip_unit,LINE-B,PLANT-OPGLIÈRES,3000,2018
+EQ-CIP-003,CIP Unit Nutricia,cip_unit,LINE-C,PLANT-ALMERÍA,2000,2019
+EQ-FM-001,Flow Meter Water A,flow_meter,LINE-A,PLANT-OPGLIÈRES,,2018
+EQ-FM-002,Flow Meter Water B,flow_meter,LINE-B,PLANT-OPGLIÈRES,,2018
+EQ-FM-003,Flow Meter Nutricia,flow_meter,LINE-C,PLANT-ALMERÍA,,2019
+EQ-PKG-001,Packing Line Alpha,packing,LINE-A,PLANT-OPGLIÈRES,5000,2020
+EQ-PKG-002,Packing Line Beta,packing,LINE-B,PLANT-OPGLIÈRES,5000,2021
+EQ-PKG-003,Packing Line Nutricia,packing,LINE-C,PLANT-ALMERÍA,3500,2021

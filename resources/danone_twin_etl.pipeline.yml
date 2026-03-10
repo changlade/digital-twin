@@ -1,0 +1,30 @@
+resources:
+  pipelines:
+    danone_twin_etl:
+      name: "[${bundle.target}] Danone Digital Twin ETL"
+
+      # Target catalog and schema for all output tables
+      catalog: ${var.catalog}
+      target: ${var.schema}
+
+      # Source files: all SQL files under transformations/
+      root_path: ../src/danone_twin_etl
+      libraries:
+        - glob:
+            include: ../src/danone_twin_etl/transformations/**
+
+      # Pass streaming volume path to the bronze SQL (${streaming_events_path})
+      configuration:
+        streaming_events_path: /Volumes/${var.catalog}/${var.schema}/${var.volume_name}/streaming_events
+
+      serverless: true
+      continuous: true
+      photon: false
+      channel: current
+
+      # development: true pauses continuous triggers — keep false for live streaming demo
+      development: false
+
+      permissions:
+        - level: CAN_VIEW
+          group_name: users
