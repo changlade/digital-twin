@@ -1,7 +1,5 @@
 <div align="center">
   <img src="docs/dairyflow-banner.png" alt="DairyFlow Banner" width="800"/>
-  <br/>
-  <img src="docs/dairyflow-icon.png" alt="DairyFlow Icon" width="180"/>
 </div>
 
 # Danone Digital Twin
