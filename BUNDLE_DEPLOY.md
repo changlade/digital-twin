@@ -217,10 +217,11 @@ databricks bundle run danone_twin_etl --profile DEFAULT   # full refresh resets 
 ### After a backend-only change (Python routers, etc.)
 
 ```bash
-databricks bundle deploy --profile DEFAULT
-# The app restarts automatically on the next request or you can trigger a redeploy:
+databricks bundle deploy --target demo --profile DEFAULT
+# Bundle deploy creates/updates the app resource but does not push code.
+# Always follow with an explicit app deploy:
 databricks apps deploy danone-dairyflow \
-  --source-code-path /Workspace/Users/christophe.anglade@databricks.com/.bundle/danone-digital-twin/dev/files/apps/dairyflow/backend \
+  --source-code-path /Workspace/Users/christophe.anglade@databricks.com/.bundle/danone-digital-twin/demo/files/apps/dairyflow/backend \
   --profile DEFAULT
 ```
 
@@ -228,8 +229,13 @@ databricks apps deploy danone-dairyflow \
 
 ```bash
 ./scripts/build_frontend.sh          # rebuild React → static/
-databricks bundle deploy --profile DEFAULT
+databricks bundle deploy --target demo --profile DEFAULT
+databricks apps deploy danone-dairyflow \
+  --source-code-path /Workspace/Users/christophe.anglade@databricks.com/.bundle/danone-digital-twin/demo/files/apps/dairyflow/backend \
+  --profile DEFAULT
 ```
+
+> **Note:** `databricks bundle deploy` uploads files and provisions the app resource, but a separate `databricks apps deploy` is always required to push the source code and restart the app process.
 
 ---
 
