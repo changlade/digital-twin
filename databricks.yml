@@ -63,3 +63,18 @@ targets:
       run_duration_minutes: "720"
       app_name: danone-dairyflow-prod
       secret_scope: dairyflow-secrets-prod
+
+  # ── Demo workspace ────────────────────────────────────────────────────────────
+  # Deploy with: databricks bundle deploy --target demo --profile DEFAULT
+  demo:
+    workspace:
+      host: https://fe-vm-vdm-serverless-nmmvdg.cloud.databricks.com
+    variables:
+      catalog: danone_uc
+      schema: digital_twin
+      volume_name: twin_landing
+      warehouse_id: ed6b19e7cf9a48aa
+      run_duration_minutes: "360"
+      app_name: danone-dairyflow
+      secret_scope: dairyflow-secrets
+      secret_key: databricks-pat
