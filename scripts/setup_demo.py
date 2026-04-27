@@ -53,13 +53,20 @@ print(f"Events directory ready: {EVENTS_PATH}")
 
 import os, sys
 
-# Locate the bundle files directory (uploaded by the bundle to workspace)
-# The bundle deploys files under /Workspace/.bundle/<name>/<target>/files/
-# We look for the data directory relative to the notebook location
-bundle_files_base = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) if "__file__" in dir() else "/Workspace/files"
+# Locate the bundle files directory (uploaded by the bundle to workspace).
+# The bundle deploys to /Workspace/Users/<user>/.bundle/<name>/<target>/files/
+# The notebook itself lives at .../files/scripts/setup_demo, so we go up two
+# levels from the notebook path to reach the files root.
+_notebook_path = dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get()
+# _notebook_path is a workspace path like /Workspace/Users/.../files/scripts/setup_demo
+# Convert to a filesystem path (prefix with /Workspace if not already absolute)
+_notebook_fs = _notebook_path if _notebook_path.startswith("/Workspace") else f"/Workspace{_notebook_path}"
+bundle_files_base = os.path.dirname(os.path.dirname(_notebook_fs))  # up from scripts/ → files root
 
 data_dir = os.path.join(bundle_files_base, "data")
-print(f"Looking for reference CSVs in: {data_dir}")
+print(f"Notebook path   : {_notebook_path}")
+print(f"Bundle files    : {bundle_files_base}")
+print(f"Data directory  : {data_dir}")
 
 def load_reference_csv(filename: str, table_name: str) -> None:
     """Load a CSV from the data/ directory into a Delta table."""
