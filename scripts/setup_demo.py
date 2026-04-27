@@ -73,15 +73,15 @@ def load_reference_csv(filename: str, table_name: str) -> None:
     local_path = os.path.join(data_dir, filename)
     volume_dest = f"{VOLUME_PATH}/reference/{filename}"
 
-    # Copy CSV to volume
+    # Copy CSV from workspace files → UC Volume (both paths are filesystem-accessible)
     pathlib.Path(os.path.dirname(volume_dest)).mkdir(parents=True, exist_ok=True)
     import shutil
     shutil.copy2(local_path, volume_dest)
     print(f"  Copied {filename} → {volume_dest}")
 
-    # Load into Delta table
+    # Read from the volume path (accessible to Spark on serverless) and save as Delta
     full_table = f"{CATALOG}.{SCHEMA}.{table_name}"
-    df = spark.read.csv(f"file:{local_path}", header=True, inferSchema=True)
+    df = spark.read.csv(volume_dest, header=True, inferSchema=True)
     df.write.format("delta").mode("overwrite").saveAsTable(full_table)
     print(f"  Loaded {df.count()} rows into {full_table}")
 
