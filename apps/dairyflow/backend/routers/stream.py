@@ -38,7 +38,7 @@ _EVENT_COLS = """
 def _fetch_events(seconds: int, limit: int) -> list[dict]:
     sql = f"""
     SELECT {_EVENT_COLS}
-    FROM danonedemo_catalog.digital_twin.silver_twin_events
+    FROM silver_twin_events
     WHERE event_ts >= current_timestamp() - INTERVAL {seconds} SECONDS
     ORDER BY event_ts DESC
     LIMIT {limit}

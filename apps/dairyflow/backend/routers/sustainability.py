@@ -30,7 +30,7 @@ def get_sustainability(hours: int = 24):
             CAST(estimated_co2_kg AS DOUBLE)   AS estimated_co2_kg,
             CAST(water_alarm_count AS INT)     AS water_alarm_count,
             CAST(total_events AS INT)          AS event_count
-        FROM danonedemo_catalog.digital_twin.gold_sustainability_hourly
+        FROM gold_sustainability_hourly
         WHERE hour_bucket >= current_timestamp() - INTERVAL {int(hours)} HOURS
         ORDER BY hour_bucket DESC
         """
@@ -51,7 +51,7 @@ def get_sustainability_summary():
             CAST(SUM(cip_water_liters) AS DOUBLE)    AS cip_water_liters,
             CAST(SUM(estimated_co2_kg) AS DOUBLE)    AS estimated_co2_kg,
             CAST(SUM(water_alarm_count) AS INT)      AS water_alarm_count
-        FROM danonedemo_catalog.digital_twin.gold_sustainability_hourly
+        FROM gold_sustainability_hourly
         GROUP BY plant_id
         ORDER BY plant_id
         """
@@ -78,7 +78,7 @@ def get_batch_carbon_traceback():
             CAST(avg_moisture_pct AS DOUBLE) AS avg_moisture_pct,
             CAST(moisture_compliance_pct AS DOUBLE) AS moisture_compliance_pct,
             CAST(total_events AS INT) AS event_count
-        FROM danonedemo_catalog.digital_twin.gold_batch_yield
+        FROM gold_batch_yield
         ORDER BY batch_first_seen DESC
         LIMIT 20
         """

@@ -27,16 +27,16 @@ def get_graph():
             COALESCE(CAST(m.avg_temperature_c AS DOUBLE), 0.0)  AS avg_temperature_c,
             COALESCE(CAST(m.total_energy_kwh AS DOUBLE), 0.0)   AS total_energy_kwh,
             COALESCE(CAST(m.alarm_count AS INT), 0)             AS alarm_count
-        FROM danonedemo_catalog.digital_twin.equipment e
+        FROM equipment e
         LEFT JOIN (
             SELECT equipment_id,
                    avg_temperature_c,
                    total_energy_kwh,
                    alarm_count
-            FROM danonedemo_catalog.digital_twin.gold_equipment_metrics
+            FROM gold_equipment_metrics
             WHERE window_5min = (
                 SELECT MAX(window_5min)
-                FROM danonedemo_catalog.digital_twin.gold_equipment_metrics
+                FROM gold_equipment_metrics
             )
         ) m ON e.equipment_id = m.equipment_id
         ORDER BY e.plant_id, e.equipment_type
@@ -53,7 +53,7 @@ def get_graph():
             COALESCE(CAST(ftr_rate_pct AS DOUBLE), 0.0)            AS ftr_rate_pct,
             COALESCE(CAST(total_energy_kwh AS DOUBLE), 0.0)        AS total_energy_kwh,
             COALESCE(CAST(moisture_compliance_pct AS DOUBLE), 0.0) AS moisture_compliance_pct
-        FROM danonedemo_catalog.digital_twin.gold_batch_yield
+        FROM gold_batch_yield
         ORDER BY batch_first_seen DESC
         LIMIT 15
         """
@@ -65,7 +65,7 @@ def get_graph():
             equipment_name,
             equipment_type,
             COUNT(*) AS event_count
-        FROM danonedemo_catalog.digital_twin.silver_twin_events
+        FROM silver_twin_events
         WHERE batch_id IS NOT NULL
           AND equipment_id IS NOT NULL
           AND event_ts >= current_timestamp() - INTERVAL 2 HOURS

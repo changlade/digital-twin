@@ -4,11 +4,11 @@ command:
 
 env:
   - name: DATABRICKS_HOST
-    value: "https://fevm-danonedemo.cloud.databricks.com"
+    value: "https://fe-vm-vdm-serverless-nmmvdg.cloud.databricks.com"
   - name: DATABRICKS_WAREHOUSE_ID
-    value: "50e0bc7f9918a201"
+    value: "ed6b19e7cf9a48aa"
   - name: DATABRICKS_CATALOG
-    value: "danonedemo_catalog"
+    value: "danone_uc"
   - name: DATABRICKS_SCHEMA
     value: "digital_twin"
   - name: SECRET_SCOPE

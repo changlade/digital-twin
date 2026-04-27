@@ -31,10 +31,10 @@ def get_equipment_metrics():
             CAST(avg_flow_rate_l_min AS DOUBLE) AS avg_flow_rate_l_min,
             CAST(alarm_count AS INT)           AS alarm_count,
             CAST(event_count AS INT)           AS event_count
-        FROM danonedemo_catalog.digital_twin.gold_equipment_metrics
+        FROM gold_equipment_metrics
         WHERE window_5min = (
             SELECT MAX(window_5min)
-            FROM danonedemo_catalog.digital_twin.gold_equipment_metrics
+            FROM gold_equipment_metrics
         )
         ORDER BY plant_id, line_id, equipment_name
         """
@@ -55,7 +55,7 @@ def get_equipment_history(equipment_id: str, hours: int = 1):
             CAST(total_energy_kwh AS DOUBLE)   AS total_energy_kwh,
             CAST(alarm_count AS INT)           AS alarm_count,
             CAST(avg_flow_rate_l_min AS DOUBLE) AS avg_flow_rate_l_min
-        FROM danonedemo_catalog.digital_twin.gold_equipment_metrics
+        FROM gold_equipment_metrics
         WHERE equipment_id = '{safe_id}'
           AND window_5min >= current_timestamp() - INTERVAL {int(hours)} HOURS
         ORDER BY window_5min ASC
@@ -79,7 +79,7 @@ def get_equipment_reference():
             location,
             capacity_lph,
             install_year
-        FROM danonedemo_catalog.digital_twin.equipment
+        FROM equipment
         ORDER BY plant_id, line_id, equipment_name
         """
         rows = execute_sql(sql)

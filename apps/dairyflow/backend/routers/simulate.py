@@ -44,7 +44,7 @@ def run_simulation(req: SimulationRequest):
             CAST(total_energy_kwh AS DOUBLE)  AS total_energy_kwh,
             CAST(ftr_rate_pct AS DOUBLE)      AS ftr_rate_pct,
             CAST(alarm_count AS INT)          AS alarm_count
-        FROM danonedemo_catalog.digital_twin.gold_batch_yield
+        FROM gold_batch_yield
         WHERE batch_id = '{safe_id}'
         LIMIT 1
         """
@@ -135,7 +135,7 @@ def list_simulatable_batches():
                CAST(avg_fat_pct AS DOUBLE)     AS avg_fat_pct,
                CAST(avg_protein_pct AS DOUBLE) AS avg_protein_pct,
                CAST(ftr_rate_pct AS DOUBLE)    AS ftr_rate_pct
-        FROM danonedemo_catalog.digital_twin.gold_batch_yield
+        FROM gold_batch_yield
         ORDER BY batch_first_seen DESC
         LIMIT 15
         """

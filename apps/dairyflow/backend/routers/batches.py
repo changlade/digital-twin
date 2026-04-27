@@ -32,7 +32,7 @@ def get_batch_yield():
             CAST(ftr_rate_pct AS DOUBLE)            AS ftr_rate_pct,
             CAST(total_energy_kwh AS DOUBLE)        AS total_energy_kwh,
             CAST(total_events AS INT)               AS event_count
-        FROM danonedemo_catalog.digital_twin.gold_batch_yield
+        FROM gold_batch_yield
         ORDER BY batch_first_seen DESC
         LIMIT 20
         """
@@ -47,7 +47,7 @@ def get_batches_reference():
     try:
         sql = """
         SELECT *
-        FROM danonedemo_catalog.digital_twin.raw_material_batches
+        FROM raw_material_batches
         ORDER BY batch_id
         """
         rows = execute_sql(sql)
