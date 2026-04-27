@@ -45,13 +45,22 @@ echo ""
 echo "==> Deploying bundle..."
 databricks bundle deploy --target "$TARGET" --profile "$PROFILE"
 
-# Step 3 – App deploy (pushes source code and restarts the app process)
+# Step 3 – Upload static/ separately (gitignored, so bundle deploy skips it)
 BUNDLE_FILES_PATH=$(databricks bundle validate --target "$TARGET" --profile "$PROFILE" --output json 2>/dev/null \
   | python3 -c "import json,sys; b=json.load(sys.stdin); print(b.get('workspace',{}).get('file_path',''))" 2>/dev/null \
   || echo "")
 
 SOURCE_CODE_PATH="${BUNDLE_FILES_PATH}/apps/dairyflow/backend"
+STATIC_LOCAL="$REPO_ROOT/apps/dairyflow/backend/static"
+STATIC_REMOTE="${SOURCE_CODE_PATH}/static"
 
+echo ""
+echo "==> Uploading static frontend to workspace..."
+echo "    $STATIC_LOCAL → $STATIC_REMOTE"
+databricks workspace import-dir "$STATIC_LOCAL" "$STATIC_REMOTE" \
+  --overwrite --profile "$PROFILE"
+
+# Step 4 – App deploy (snapshots the full backend dir, now with static/)
 echo ""
 echo "==> Deploying app from: $SOURCE_CODE_PATH"
 databricks apps deploy "$APP_NAME" \
