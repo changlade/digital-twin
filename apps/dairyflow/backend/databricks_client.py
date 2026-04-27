@@ -1,20 +1,16 @@
 """Databricks SQL warehouse client for Databricks Apps.
 
-Auth strategy on Databricks Apps:
-  1. Runtime injects DATABRICKS_CLIENT_ID + DATABRICKS_CLIENT_SECRET (M2M OAuth).
-  2. We use those to fetch the PAT from Databricks Secrets.
-  3. We re-init with PAT, but must temporarily unset the M2M env vars first —
-     otherwise the SDK raises "more than one authorization method configured".
-
-Locally:
-  Falls back to ~/.databrickscfg DEFAULT profile.
+Auth strategy (in priority order):
+  1. DATABRICKS_TOKEN set in env (app.yaml explicit PAT) → use it directly.
+     M2M env vars are removed immediately so the SDK sees only one auth method.
+  2. DATABRICKS_CLIENT_ID + DATABRICKS_CLIENT_SECRET injected by Databricks Apps
+     → use M2M OAuth directly (SP must have warehouse + UC SELECT access).
+  3. Neither → local ~/.databrickscfg DEFAULT profile (local dev).
 """
 from __future__ import annotations
 
-import base64
 import logging
 import os
-from contextlib import contextmanager
 from typing import Any
 
 from databricks.sdk import WorkspaceClient
@@ -23,79 +19,47 @@ from databricks.sdk.service.sql import StatementState
 log = logging.getLogger(__name__)
 
 WAREHOUSE_ID = os.environ.get("DATABRICKS_WAREHOUSE_ID", "50e0bc7f9918a201")
-CATALOG = os.environ.get("DATABRICKS_CATALOG", "danonedemo_catalog")
-SCHEMA = os.environ.get("DATABRICKS_SCHEMA", "digital_twin")
-HOST = os.environ.get("DATABRICKS_HOST", "https://fevm-danonedemo.cloud.databricks.com")
+CATALOG      = os.environ.get("DATABRICKS_CATALOG",          "danonedemo_catalog")
+SCHEMA       = os.environ.get("DATABRICKS_SCHEMA",           "digital_twin")
+HOST         = os.environ.get("DATABRICKS_HOST",             "https://fevm-danonedemo.cloud.databricks.com")
+
+# If a PAT is explicitly provided, strip M2M vars NOW (at import time) so the
+# SDK never sees two auth methods simultaneously.
+_DIRECT_TOKEN = os.environ.get("DATABRICKS_TOKEN")
+if _DIRECT_TOKEN:
+    os.environ.pop("DATABRICKS_CLIENT_ID", None)
+    os.environ.pop("DATABRICKS_CLIENT_SECRET", None)
+    log.info("Auth mode: PAT (DATABRICKS_TOKEN) — M2M env vars cleared")
 
 _client: WorkspaceClient | None = None
-
-# Keys that conflict with PAT auth when present in the environment
-_M2M_ENV_KEYS = ("DATABRICKS_CLIENT_ID", "DATABRICKS_CLIENT_SECRET")
-
-
-@contextmanager
-def _without_m2m_env():
-    """Temporarily remove M2M OAuth env vars so the SDK accepts PAT auth."""
-    saved = {k: os.environ.pop(k) for k in _M2M_ENV_KEYS if k in os.environ}
-    try:
-        yield
-    finally:
-        os.environ.update(saved)
-
-
-def _fetch_pat_from_secret(w: WorkspaceClient) -> str | None:
-    """Use the M2M client to read the PAT from Databricks Secrets."""
-    scope = os.environ.get("SECRET_SCOPE")
-    key = os.environ.get("SECRET_KEY")
-    if not scope or not key:
-        return None
-    try:
-        resp = w.secrets.get_secret(scope=scope, key=key)
-        if resp.value:
-            return base64.b64decode(resp.value).decode("utf-8").strip()
-    except Exception as exc:
-        log.warning("Could not fetch secret %s/%s: %s", scope, key, exc)
-    return None
 
 
 def get_client() -> WorkspaceClient:
     global _client
     if _client is None:
-        direct_token = os.environ.get("DATABRICKS_TOKEN")
-        client_id = os.environ.get("DATABRICKS_CLIENT_ID")
+        client_id     = os.environ.get("DATABRICKS_CLIENT_ID")
         client_secret = os.environ.get("DATABRICKS_CLIENT_SECRET")
 
-        if direct_token:
-            # PAT provided directly — unset M2M vars to avoid conflict
-            log.info("Auth: DATABRICKS_TOKEN env var")
-            with _without_m2m_env():
-                _client = WorkspaceClient(host=HOST, token=direct_token)
+        if _DIRECT_TOKEN:
+            log.info("Auth: explicit PAT via DATABRICKS_TOKEN")
+            _client = WorkspaceClient(host=HOST, token=_DIRECT_TOKEN)
 
         elif client_id and client_secret:
-            # Databricks Apps M2M: bootstrap a temporary M2M client to read the secret,
-            # then switch to PAT for all subsequent SQL calls.
-            log.info("Auth: M2M → fetching PAT from Databricks Secrets")
-            m2m = WorkspaceClient(host=HOST, client_id=client_id, client_secret=client_secret)
-            pat = _fetch_pat_from_secret(m2m)
-
-            if pat:
-                log.info("Auth: PAT retrieved from secret, re-initialising (M2M env vars unset)")
-                with _without_m2m_env():
-                    _client = WorkspaceClient(host=HOST, token=pat)
-            else:
-                # Secret unavailable — fall back to M2M for all calls
-                log.info("Auth: falling back to M2M OAuth (secret unavailable)")
-                _client = m2m
+            log.info("Auth: M2M OAuth (Databricks Apps service principal)")
+            _client = WorkspaceClient(
+                host=HOST,
+                client_id=client_id,
+                client_secret=client_secret,
+            )
 
         else:
-            # Local development — no env vars → config file
-            log.info("Auth: ~/.databrickscfg DEFAULT profile")
+            log.info("Auth: ~/.databrickscfg profile (local dev)")
             _client = WorkspaceClient(
                 profile=os.environ.get("DATABRICKS_PROFILE", "DEFAULT")
             )
 
-        log.info("Client ready | host=%s | auth=%s", HOST,
-                 getattr(_client.config, "auth_type", "unknown"))
+        log.info("Client ready | host=%s | warehouse=%s | catalog=%s.%s",
+                 HOST, WAREHOUSE_ID, CATALOG, SCHEMA)
     return _client
 
 

@@ -28,7 +28,7 @@ _EVENT_COLS = """
         CAST(temperature_c AS DOUBLE)     AS temperature_c,
         CAST(moisture_pct AS DOUBLE)      AS moisture_pct,
         CAST(energy_kwh AS DOUBLE)        AS energy_kwh,
-        CAST(flow_rate_l_min AS DOUBLE)   AS flow_rate_l_min,
+        CAST(flow_rate_l_min AS DOUBLE)   AS flow_rate_lph,
         CAST(viscosity_cp AS DOUBLE)      AS viscosity_cp,
         CAST(pressure_kpa AS DOUBLE)      AS pressure_kpa,
         alarm_code,
