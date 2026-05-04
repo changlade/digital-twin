@@ -20,8 +20,8 @@ def get_graph():
         equipment_sql = """
         SELECT
             e.equipment_id,
-            e.equipment_name,
-            e.equipment_type,
+            e.name             AS equipment_name,
+            e.type             AS equipment_type,
             e.plant_id,
             e.line_id,
             COALESCE(CAST(m.avg_temperature_c AS DOUBLE), 0.0)  AS avg_temperature_c,
@@ -39,7 +39,7 @@ def get_graph():
                 FROM gold_equipment_metrics
             )
         ) m ON e.equipment_id = m.equipment_id
-        ORDER BY e.plant_id, e.equipment_type
+        ORDER BY e.plant_id, e.type
         """
 
         batch_sql = """

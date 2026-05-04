@@ -72,15 +72,14 @@ def get_equipment_reference():
         sql = """
         SELECT
             equipment_id,
-            equipment_name,
-            equipment_type,
+            name             AS equipment_name,
+            type             AS equipment_type,
             plant_id,
             line_id,
-            location,
-            capacity_lph,
-            install_year
+            capacity_kg_h,
+            commissioned_year AS install_year
         FROM equipment
-        ORDER BY plant_id, line_id, equipment_name
+        ORDER BY plant_id, line_id, name
         """
         rows = execute_sql(sql)
         return {"data": rows}
