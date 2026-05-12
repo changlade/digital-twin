@@ -63,7 +63,7 @@ export default function SustainabilityPage() {
   const [traceback, setTraceback] = useState<BatchCarbonRow[]>([]);
   const [emissionFactor, setEmissionFactor] = useState(0.233);
   const [loading, setLoading] = useState(true);
-  const [hours, setHours] = useState(24);
+  const [hours, setHours] = useState(720);
 
   useEffect(() => {
     setLoading(true);
@@ -126,17 +126,21 @@ export default function SustainabilityPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          {[6, 12, 24].map((h) => (
+          {[
+            { value: 168, label: "7d" },
+            { value: 720, label: "30d" },
+            { value: 0,   label: "All" },
+          ].map(({ value, label }) => (
             <button
-              key={h}
-              onClick={() => setHours(h)}
+              key={value}
+              onClick={() => setHours(value)}
               className={
-                hours === h
+                hours === value
                   ? "btn-primary px-3 py-1.5 text-xs"
                   : "btn-ghost px-3 py-1.5 text-xs"
               }
             >
-              {h}h
+              {label}
             </button>
           ))}
         </div>

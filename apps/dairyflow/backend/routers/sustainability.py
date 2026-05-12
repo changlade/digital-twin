@@ -17,8 +17,12 @@ def _error(exc: Exception) -> JSONResponse:
 
 
 @router.get("/sustainability")
-def get_sustainability(hours: int = 24):
+def get_sustainability(hours: int = 720):
     try:
+        time_filter = (
+            f"WHERE hour_bucket >= current_timestamp() - INTERVAL {int(hours)} HOURS"
+            if hours > 0 else ""
+        )
         sql = f"""
         SELECT
             plant_id,
@@ -31,8 +35,8 @@ def get_sustainability(hours: int = 24):
             CAST(water_alarm_count AS INT)     AS water_alarm_count,
             CAST(total_events AS INT)          AS event_count
         FROM gold_sustainability_hourly
-        WHERE hour_bucket >= current_timestamp() - INTERVAL {int(hours)} HOURS
-        ORDER BY hour_bucket DESC
+        {time_filter}
+        ORDER BY hour_bucket ASC
         """
         rows = execute_sql(sql)
         return {"data": rows}
